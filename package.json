@@ -1,0 +1,16 @@
+{
+  "name": "cs467-capstone-webcrawler",
+  "version": "0.0.0",
+  "description": "A webcrawler written in Javascript",
+  "main": "server.js",
+  "author": "Sky",
+  "license": "ISC",
+  "dependencies": {
+    "express": "~4.15.2",
+    "body-parser": "~1.17.1",
+    "express-handlebars": "~3.0.0",
+    "mongodb": "~2.2.26",
+    "socket.io": "~1.7.3",
+    "http": "0.0.0"
+  }
+}
