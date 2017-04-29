@@ -1,0 +1,14 @@
+<%- include('header') -%>
+
+<!-- 
+    So this means, if we initially have content, go ahead and render it, but after the JavaScript environment loads up, React is going to take over this root div, 
+    and it will replace the content of the root div with the React application.
+    This will help us when we want to do server-side rendering. So let's go back to the arguments of the create element API method. 
+    The first argument to create element is the HTML tag type, so let's render an h2.
+-->
+    <div id="root">    
+        <%- content -%>
+    </div>
+
+
+<%- include('footer') -%>
