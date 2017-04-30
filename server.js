@@ -11,11 +11,30 @@ const server = express();
 
 server.set('view engine', 'ejs');
 
+import serverRenderFunction from './serverRender';
+//import serverRender from './serverRender';
+
 server.get('/', (req, res) => {
-    res.render('index', {
-        content: '...'
-    });
+	serverRenderFunction()
+		.then(content => {
+			res.render('index', {
+				content
+			});
+		})
+		.catch(console.error);
 });
+
+/*
+server.get('/', (req, res) => {
+  serverRender()
+    .then(content => {
+      res.render('index', {
+        content
+      });
+    })
+    .catch(console.error);
+});
+*/
 
 //to be able to use this API router, we need to export it in /api/index.js
 //first import this API router, and we can use it just like any other Express middleware.

@@ -4,7 +4,9 @@ How to setup:
 	3. npm install
 
 How to configure:
-	1. npm run dev
+	1. sudo npm run dev
 		- this creates a bundle.js and bundle.js.map via webpack
 How to run:
 	1. npm start
+	1. or to run via forever daemon:
+		forever start -c node_modules/.bin/babel-node server.js
