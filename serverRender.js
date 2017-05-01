@@ -58,14 +58,31 @@ const serverRenderFunction = () =>
         });
 */
 
+//It's not really necessary to go back to the server because we already have this data. 
+//However, this is one solution to the problem that is not too bad if you're okay with a client going back to the data api. 
+//I'll show you another solution that does not require us to go back to the api to fetch the data for the react component. 
+//And that solution is to also return the data itself from the server. So in server render, when we returned the DOM itself here, I'm going to go ahead and return two things.
+
+//I'm going to return the initial markup that we need, and this would be the exact thing we returned before and let's also return the initial data because we have it already. 
+//And this would be response.data and only to modify server.js to also include both of them in ejs. 
+//So this would give me an object with two properties, the initial markup and the initial data and I want to include them both in ejs, so initial markup and initial data.
+
+//I'm going to return the initial markup that we need, and this would be the exact thing we returned before and let's also return the initial data because we have it already.
+//And this would be response.data and only to modify server.js to also include both of them in ejs. 
+//So this would give me an object with two properties, the initial markup and the initial data and I want to include them both in ejs, so initial markup and initial data.
+
+//And now in the index.js where I'm rendering the content, this is now called initial markup, I'll also include a script tag and put the initial data as a global variable on the window. 
+//Window.initialData equal the initial data that I'm reading from the ejs variable. So that would be initial data. However I can't really read it directly like that.
+
 const serverRenderFunction = () => 
   axios.get(`${config.serverUrl}/api/contests`)
     .then(resp => {
-      return (
-	ReactDOMServer.renderToString(
-        	<App initialContests={resp.data.contests} />
-	)
-      );
+        return {
+            initialMarkup: ReactDOMServer.renderToString(
+        	    <App initialContests={resp.data.contests} />
+	        ),
+	        initialData: resp.data
+        };
     });
 
 export default serverRenderFunction;

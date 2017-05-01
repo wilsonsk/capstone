@@ -1,5 +1,4 @@
 import React from 'react';
-import axios from 'axios';
 import Header from './Header'
 import ContestPreview from './ContestPreview';
 
@@ -51,14 +50,18 @@ class App extends React.Component{
         //axios is going to give us a response object. This response object will have the data, so let's actually console.log response to make sure that we are receiving the data properly. 
         //And I'll comment out this part of the code for now, and let's test. So it looks like I'm getting an object, this is the response object, it has some method like status okay, and my data is inside the response object here. 
         //So my contests' data is response.data.contests, according to the object that I'm receiving back.
-        axios.get('/api/contests')
-            .then(resp => {
-                //console.log(resp);
-                this.setState({
-                    contests: resp.data.contests    
-                });
-            })
-            .catch(console.error);
+        
+        //we can't also reset the state here because that would be wasteful. If we have the data to begin with then we don't need to reset the state. 
+        //So I'm going to actually remove this code in here and let's go back to the index.js. Since we need to bring the data before actually rendering the front end component, I'll go ahead and make an Axios call here. 
+        //Instead of setting the state I'll do the react-dom render call itself in here. And the initial contests here are response.data.contests.
+        // axios.get('/api/contests')
+        //     .then(resp => {
+        //         //console.log(resp);
+        //         this.setState({
+        //             contests: resp.data.contests    
+        //         });
+        //     })
+        //     .catch(console.error);
     }
     
     componentWillUnmount(){
