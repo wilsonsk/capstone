@@ -1,7 +1,7 @@
 import React from 'react';
 import Header from './Header'
-import ContestList from './ContestList';
-import Contest from './Contest';
+import ContestPreview from './ContestPreview';
+
 
 //I'm going to put a div in here, and in that div, eventually we're going to render our naming contests; for now, I'm just going to do three dots. 
 //And you'll immediately get a JSX parsing error, that says these two HTML elements must be wrapped in an enclosing HTML tag. 
@@ -36,20 +36,6 @@ import Contest from './Contest';
 //However, if another code that's rendering the same component actually specifies in initialContests values, then the application will render with initial data. 
 //So the initialContests here is something that we want to read from the response. So it's response.data.contests. Just like that. 
 //And we'll put that in multiple lines. So ReactDOMServer, renderToString, the App component initialized with actual data. Cool. So this is the exact string that I want to feed to the EJS template.
-
-//And the other reason, we only have one route in our application. We actually have two. We're going to go to a contest, and we can go back to a list of contests. 
-//So it's going to be simple enough for us to just use the history API directly. If you have complicated routing, 
-//the react router library is really good and it gives you a declarative way of defining your routes, but we're going to just use the history API. 
-//However, I'm going to put the history API in a function here. Let's call this function pushstate, and this function will receive the same parameters that the official pushstate receives.
-
-//So I'll go with object, and we'll go with the URL and this pushstate is going to be an alias to window.history.pushstate, the object and an empty title and the URL. 
-//This way if I decided later on to support older browsers, all I need to modify is this function. So as a first step, when we click on a contest right now, we are recognizing the contest that we just clicked. 
-//Let's make the history API go to /contest/ the ID of that contest.
-
-const pushState = (obj, url) => {
-    window.history.pushState(obj, '', url);
-}
-
 class App extends React.Component{
     state = { 
         pageHeader: 'Naming Contests',
@@ -82,59 +68,55 @@ class App extends React.Component{
         alert('will Unmount');
     }
     
-    //So we'll declare a function here. Let's call this function fetchcontest. This function will eventually fetch the contest information from the server when we click on it, but for now, it only receives the contest ID. 
-    //This is a function, and it will use pushstate to push a history record. First argument is the object about that record, and the second argument is the URL. 
-    //So the URL is going to be /contest/ the contest ID that we are receiving, and let's put on the state object, let's put the current contest ID.
     
-    //Make that the contest ID that we're receiving. And now we want to use this fetch contest when we click on every contest, but we define this here on the main app component because it will eventually modify the state. 
-    //So I'm going to pass it down to the children component. Let's call this onContestClick. This would be this.fetchContest. And then inside contest list, we're going to receive a new property, this property called onContestClick.
-    
-    //Let's now look up the contest when we click on it. Right now, the route changes, but the content doesn't. So we're going to start changing the content here. 
-    //In particular, when I click on a contest, after I change the route, I want to look up the contest. I want to be able to put things on the state that are related to that contest that I just clicked. 
-    //However, the contest structure is an array. So right now, api/contest is giving me an array. And if I want to look up an item using the ID of that item, I have to scan the array; that's not very efficient.
-    
-    //ie., lookup a contest
-    
-    fetchContest = (contestId) => {
-        pushState(
-            {currentContestId: contestId},
-            `/contest/${contestId}`
-        );
-        //lookup contest
-        //this.state.contests[contestId]
-        this.setState({
-            pageHeader: this.state.contests[contestId].contestName,
-            currentContestId: contestId
-        });
-    };
-    
-    //And I think we can actually test that. So clicking on this contest, there you go. So now that we changed the title, let's go ahead and try to change the content as well.
-    //To change the content, I have to do a condition statement here and say something like, "do we have an active contest? Do we have a current contest?" So to do so, I'm going to also place the current contest id on the state as well. 
-    //So now when I click on a contest, not only I get the header here, I also get the current contest id. Which means, I can replace this with a conditional now and say, 
-    //"if there is a current contest id on the state, then go ahead and display contest information.
-    //Otherwise, display the contest list information." So to do so, I'm going to take this code here and place it in an instance function. 
-    //So this dot, let's call this, currentContent. So this is a function that I'm invoking directly. So I'll define it here, currentContent. 
-    //This can be a direct method here. And it will have an if statement and return either a contest component or the contest list component that we just removed from the render method.
-    
-    currentContent(){
-        if (this.state.currentContestId) {
-            return (
-                <Contest {...this.state.contests[this.state.currentContestId]} />
-            );
-        }else{
-            return (
-                <ContestList 
-                    onContestClick={this.fetchContest}
-                    contests={this.state.contests} /> 
-            );
-        }
-    }
     
     render(){
         return(
             <div className="App">
                 <Header message={this.state.pageHeader} />
-                {this.currentContent()}
+                <div>
+                    {/* 
+                        So what we need is to take this component and actually use it inside a loop that loops over all the contests.
+                        In React this is easily done with a map call. So we start with this dot props dot contests, again, this is the array, and we're going to map this array into contest preview elements. 
+                        So the map is going to expose a contest object for me, and inside the map I'm going to take the same call and instead of using this .props.contests[0] now I could just use contest. Let's go ahead and test.
+                        And as you can see, all the contests with all their categories are showing up now. Very simple, right. We start with the data array, and then we map it into a component per contest.
+                        
+                        .map(): The map() method creates a new array with the results of calling a provided function on every element in this array.
+                        1st arg of .map(): function that produces an element of the new array -- in this care an arrow function that takes an element called, contest, of the array contests
+                        ie, start with an array (this.props.contests) and map into a component per each array element (contest)
+                        
+                        You might have noticed that we're actually getting a warning from React in our current code. This is because of our dynamic array mapping here. 
+                        Every time you display a list of things dynamically, React needs a little bit of help. It needs you to identify every element with a key. 
+                        This key helps React identify the element when this array of children changes. 
+                        So we can simply use the id for every contest in this key. contest.id. And let's go ahead and test. Now that warning is gone.
+                        
+                        So just remember, every time you have a map call, you need to provide a unique key to identify the child element inside that map. 
+                        One bit of advice here. Do not use the array index as a unique key. Try and find another unique key to identify an element in an array. 
+                        In our case, our data had an ID. And usually an API data is going to give you an ID for every object, so just use that. 
+                        Now we have a React component that renders an array of contests. And we have the data, which we're reading into memory directly before rendering the React application.
+                        
+                         Now remember, the only thing we can update inside the component is the state of that component. Instead of rendering the contests from props, we're going to render it from the state. 
+                         I'm going to remove it from here. Go to the App component. And put the contests on the state of this App component and read the contests directly from the state, instead of the props. 
+                         So this should be exactly the same, no errors, and the App is rendering an empty list of contests.
+                    
+                        If you already have props as an object, and you want to pass it in JSX, you can use ... as a "spread" operator to pass the whole props object. These two components are equivalent:
+
+                        function App1() {
+                          return <Greeting firstName="Ben" lastName="Hector" />;
+                        }
+
+                        function App2() {
+                          const props = {firstName: 'Ben', lastName: 'Hector'};
+                          return <Greeting {...props} />;
+                        }
+
+                        Spread attributes can be useful when you are building generic containers. However, they can also make your code messy by making it easy to pass a lot of irrelevant props to components that don't care about them. 
+                        We recommend that you use this syntax sparingly.
+                    */}
+                    {this.state.contests.map((contest) => 
+                        <ContestPreview key={contest.id} {...contest} />
+                    )}
+                </div>
             </div>
         );    
     }        
