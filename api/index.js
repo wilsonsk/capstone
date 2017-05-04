@@ -2,7 +2,10 @@
 //For example, we're going to manage all API requests in this API module index.js
 
 import express from 'express';
-import data from '../src/testData';
+//import data from '../src/testData';
+import { MongoClient } from 'mongodb';
+import assert from 'assert';
+import config from '../config';
 
 //create a route object
 const router = express.Router();
@@ -30,16 +33,70 @@ const router = express.Router();
     
 // });
 
-const contests = data.contests.reduce((obj, contest) => {
-            obj[contest.id] = contest;
-            return obj;
-        }, {})
+// const contests = data.contests.reduce((obj, contest) => {
+//             obj[contest.id] = contest;
+//             return obj;
+//         }, {});
+
+// router.get('/contests', (req, res) => {
+//     res.send({ 
+//         contests: contests
+//     }); 
+// });
+
+
+//non mongodb: Once we switch to actual data from Mongo, we just need to change the logic inside these API endpoints
+// router.get('/contests/:contestId', (req, res) => {
+//     //id put in the url is available as req.params.contestId 
+//     let contest = contests[req.params.contestId];
+//     contest.description = 'placeholder description';
+//     // res.send({ 
+//     //     contests: contests
+//     // }); 
+//     res.send(contest);
+    
+// });
+
+//Mongo!
+//We're inside the API level. And the first thing we need is we need a MongoDB object, so we start with an empty object and then we go with MongoClient.connect. -- mdb is global to this file
+let mdb;
+//We connect to the config.mongodbUri, and this call gives me a callback and in that callback it exposes an error first and then the connected DB. 
+//So we always assert equal know the error, this will raise an error if we do have an error, and if we don't have an error then I have successful connection to MongoDB and I'm just going to assign it to the global object here. 
+//So now inside my routes I have access to the MDB connected object.
+MongoClient.connect(config.mongodbUri, (err, db) => {
+    assert.equal(null, err);
+    
+    mdb = db;
+});
+
+//However if you remember the first level of this API I don't need all the information, I only need ID category and contest name. 
+//Because if I don't project just these three columns I'll be asking for more data than my application is consuming.
+//So in Mongo we can easily do a project call here and this project call takes an object with the fields that you want to be included. 
+//So in here we're going to include the ID, you just give it a one and then category name, also one, and also the contest name.
 
 router.get('/contests', (req, res) => {
-    res.send({ 
-        contests: contests
-    }); 
-    
+    let contests = {};
+    mdb.collection('contests').find({})
+    .project({
+        id: 1,
+        categoryName: 1,
+        contestName: 1
+    })
+        .each((err, contest) => {
+            assert.equal(null, err);
+            if(!contest){
+                res.send(contests);
+                return;
+            }
+            contests[contest.id] = contest;
+        });
+});
+
+router.get('/contests/:contestId', (req, res) => {
+    mdb.collection('contests')
+        .findOne({ id: req.params.contestId })
+        .then(contest => res.send(contest))
+        .catch(console.error);
 });
 
 export default router;

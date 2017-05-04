@@ -1,7 +1,10 @@
 import React from 'react';
-import Header from './Header'
+import Header from './Header';
 import ContestList from './ContestList';
 import Contest from './Contest';
+// import apiFetchContest from '../api';
+// import apiFetchContestList from '../api';
+import * as api from '../api';
 
 //I'm going to put a div in here, and in that div, eventually we're going to render our naming contests; for now, I'm just going to do three dots. 
 //And you'll immediately get a JSX parsing error, that says these two HTML elements must be wrapped in an enclosing HTML tag. 
@@ -48,13 +51,33 @@ import Contest from './Contest';
 
 const pushState = (obj, url) => {
     window.history.pushState(obj, '', url);
-}
+};
+
+//So this is a function, and this function will give me access to the popstate event in here. 
+//Let's just console.log that event to take a look at it. So now let's refresh, go to one of the contests, and then go back. 
+//And you'll see that in the console, I have a popstate event, and what's important about this event is that we have the state here. 
+//And the state here is null, let's do one more navigation. Let's navigate forward, and I have another popstate event, and now the state here does have a currentContestId.
+
+//So when I'm navigating back and forward here, I have access to this event, and I can detect if I'm on a contest ID or I don't have a contest ID, if I have a null state. 
+//However, instead of handling this directly here, let's also extract it into its own handler. 
+//So let's call this handler onPopState, and I'm going to make this into a function that receives a handler, and in here, I will just assign the onPopState this handler that I just received.
+
+//        window.onpopstate = (event) => {
+
+const onPopState = (handler) => {
+    window.onpopstate = handler;
+};
 
 class App extends React.Component{
-    state = { 
-        pageHeader: 'Naming Contests',
-        contests: this.props.initialContests
+    // state = { 
+    //     contests: this.props.initialContests
+    // };
+    
+    static propTypes = {
+      initialData: React.PropTypes.object.isRequired
     };
+    
+    state = this.props.initialData;
     
     componentDidMount(){
         //going to use ajax request to fetch data from remote api (/api/index.js) via axios
@@ -76,10 +99,18 @@ class App extends React.Component{
         //         });
         //     })
         //     .catch(console.error);
+        
+        onPopState((event) => {
+            this.setState({
+                currentContestId: (event.state || {}).currentContestId
+            });
+        });
+        
     }
     
     componentWillUnmount(){
         alert('will Unmount');
+        onPopState(null);
     }
     
     //So we'll declare a function here. Let's call this function fetchcontest. This function will eventually fetch the contest information from the server when we click on it, but for now, it only receives the contest ID. 
@@ -102,11 +133,57 @@ class App extends React.Component{
         );
         //lookup contest
         //this.state.contests[contestId]
-        this.setState({
-            pageHeader: this.state.contests[contestId].contestName,
-            currentContestId: contestId
+        
+        //So I'm making sure that we're using the valid information coming from the server. And just doing the current contestId is going to switch to this view. 
+        //And this view is just looking up a contest from the state. So what I can do to make this view read the description and everything else in the contest, i
+        //s I can modify the contests object that I have on the state by copying the current contest object. So it's state.contests. 
+        //However, the property associated with the current contestId, so contest.id is a dynamic here, I can set that to the new contest object coming from the server, and that's the one that has the description and everything else.
+        
+        //So this way, I cache the fetched contest information on the state, and when I start going back and forth, this is going to be an improvement on performance.
+        //Because if I already have a description for a contest, it will be on the state. So I think this is good to go. 
+        //Except we need a semi colon here. Thank you, yes lint. And now, inside contest, we can start using more information coming from the API. 
+        //So I'm going to go ahead and use the description here. And I have a description, which is a string, not using the id anymore.
+        
+        api.apiFetchContest(contestId).then(contest => {
+            this.setState({
+                //pageHeader: this.state.contests[contestId].contestName,
+                //pageHeader: contest.contestName,
+                currentContestId: contest.id,
+                contests: {
+                    ...this.state.contests,
+                    [contest.id]: contest
+                }
+            });            
         });
     };
+    
+    fetchContestList = () => {
+        pushState(
+            {currentContestId: null},
+            '/'
+        );
+        //lookup contest
+        //this.state.contests[contestId]
+        
+        //So I'm making sure that we're using the valid information coming from the server. And just doing the current contestId is going to switch to this view. 
+        //And this view is just looking up a contest from the state. So what I can do to make this view read the description and everything else in the contest, i
+        //s I can modify the contests object that I have on the state by copying the current contest object. So it's state.contests. 
+        //However, the property associated with the current contestId, so contest.id is a dynamic here, I can set that to the new contest object coming from the server, and that's the one that has the description and everything else.
+        
+        //So this way, I cache the fetched contest information on the state, and when I start going back and forth, this is going to be an improvement on performance.
+        //Because if I already have a description for a contest, it will be on the state. So I think this is good to go. 
+        //Except we need a semi colon here. Thank you, yes lint. And now, inside contest, we can start using more information coming from the API. 
+        //So I'm going to go ahead and use the description here. And I have a description, which is a string, not using the id anymore.
+        
+        api.apiFetchContestList().then(contests => {
+            this.setState({
+                //pageHeader: this.state.contests[contestId].contestName,
+                //pageHeader: contest.contestName,
+                currentContestId: null,
+                contests 
+            });            
+        });
+    };    
     
     //And I think we can actually test that. So clicking on this contest, there you go. So now that we changed the title, let's go ahead and try to change the content as well.
     //To change the content, I have to do a condition statement here and say something like, "do we have an active contest? Do we have a current contest?" So to do so, I'm going to also place the current contest id on the state as well. 
@@ -116,10 +193,21 @@ class App extends React.Component{
     //So this dot, let's call this, currentContent. So this is a function that I'm invoking directly. So I'll define it here, currentContent. 
     //This can be a direct method here. And it will have an if statement and return either a contest component or the contest list component that we just removed from the render method.
     
+    currentContest(){
+        return this.state.contests[this.state.currentContestId];
+    }
+    pageHeader(){
+        if(this.state.currentContestId){
+            return this.currentContest().contestName;
+        }else{
+            return 'Naming Contests';
+        }
+    }
+    
     currentContent(){
         if (this.state.currentContestId) {
             return (
-                <Contest {...this.state.contests[this.state.currentContestId]} />
+                <Contest contestListClick={this.fetchContestList} {...this.currentContest()} />
             );
         }else{
             return (
@@ -133,7 +221,7 @@ class App extends React.Component{
     render(){
         return(
             <div className="App">
-                <Header message={this.state.pageHeader} />
+                <Header message={this.pageHeader()} />
                 {this.currentContent()}
             </div>
         );    

@@ -14,16 +14,16 @@ server.set('view engine', 'ejs');
 import serverRenderFunction from './serverRender';
 //import serverRender from './serverRender';
 
-server.get('/', (req, res) => {
-	serverRenderFunction()
-		.then(({ initialMarkup, initialData }) => {
-			res.render('index', {
-				initialMarkup, 
-				initialData
-			});
-		})
-		.catch(console.error);
-});
+// server.get('/', (req, res) => {
+// 	serverRenderFunction()
+// 		.then(({ initialMarkup, initialData }) => {
+// 			res.render('index', {
+// 				initialMarkup, 
+// 				initialData
+// 			});
+// 		})
+// 		.catch(console.error);
+// });
 
 /*
 server.get('/', (req, res) => {
@@ -36,6 +36,18 @@ server.get('/', (req, res) => {
     .catch(console.error);
 });
 */
+
+server.get(['/', '/contest/:contestId'], (req, res) => {
+    //req.params.contestId -- works as a conditional because it only exists if '/contest/:contestId' is in url
+	serverRenderFunction(req.params.contestId)
+		.then(({ initialMarkup, initialData }) => {
+			res.render('index', {
+				initialMarkup, 
+				initialData
+			});
+		})
+		.catch(console.error);
+});
 
 //to be able to use this API router, we need to export it in /api/index.js
 //first import this API router, and we can use it just like any other Express middleware.

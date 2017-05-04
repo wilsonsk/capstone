@@ -67,7 +67,7 @@ import App from './components/App';
 //So this is another solution but you do have to pick your weapons here. Because I imagine that some people would think that this is actually a hack. But it did save us an extra round trip from the client to the server.
 
 ReactDOM.render(
-  <App initialContests={window.initialData.contests} />,
+  <App initialData={window.initialData} />,
   document.getElementById('root')
 );
 

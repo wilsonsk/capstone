@@ -74,14 +74,40 @@ const serverRenderFunction = () =>
 //And now in the index.js where I'm rendering the content, this is now called initial markup, I'll also include a script tag and put the initial data as a global variable on the window. 
 //Window.initialData equal the initial data that I'm reading from the ejs variable. So that would be initial data. However I can't really read it directly like that.
 
-const serverRenderFunction = () => 
-  axios.get(`${config.serverUrl}/api/contests`)
+//So one more time, we are passing the contestId here, and then we're reading two things: we're reading the API URL based on this contestId, and we're reading the initial data based on this contestId. 
+//The API URL is going to be either /api/contests/ the contestId that we just passed, or in general for a list of contets, we're reading this api endpoint. 
+//The initial data is going to be either the default, just the object of contests, or it's going to be a current contestId that also lists an object of contests that only has one contest.
+
+const getApiUrl = contestId => {
+    if(contestId){
+        return `${config.serverUrl}/api/contests/${contestId}`;
+    }
+    return `${config.serverUrl}/api/contests`;    
+};
+
+const getInitialData = (contestId, apiData) => {
+    if(contestId){
+        return {
+            currentContestId: apiData.id,
+            contests: {
+                [apiData.id]: apiData
+            }
+        };
+    }
+    return {
+        contests: apiData.contests
+    };
+};
+
+const serverRenderFunction = (contestId) => 
+  axios.get(getApiUrl(contestId))
     .then(resp => {
+        const initialData = getInitialData(contestId, resp.data);
         return {
             initialMarkup: ReactDOMServer.renderToString(
-        	    <App initialContests={resp.data.contests} />
+        	    <App initialData={initialData} />
 	        ),
-	        initialData: resp.data
+	        initialData: initialData
         };
     });
 
